@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Absen Sekolah</title>
+    <title>Smart Absen - Filter Kelas</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
         .navbar { background: #003366; color: white; padding: 1rem; }
         .card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #003366; border: none; }
+        .btn-simpan { background-color: #003366; color: white; }
         .badge-hadir { background-color: #28a745; }
         .badge-izin { background-color: #ffc107; color: black; }
         .badge-sakit { background-color: #17a2b8; }
@@ -20,7 +20,7 @@
 
     <nav class="navbar mb-4">
         <div class="container text-center">
-            <h4 class="mb-0">🏫 Portal Smart Absen Guru</h4>
+            <h4 class="mb-0">🏫 Portal Absensi Berbasis Kelas</h4>
         </div>
     </nav>
 
@@ -28,27 +28,24 @@
         <div class="row">
             <div class="col-md-5 mb-4">
                 <div class="card p-4">
-                    <h5 class="mb-3 font-weight-bold">Pilih Siswa & Status</h5>
+                    <h5 class="mb-3 text-center">Input Absensi</h5>
                     <form id="absenForm">
                         <div class="mb-3">
-                            <label class="form-label">Kelas</label>
-                            <select id="kelas" class="form-select">
+                            <label class="form-label">1. Pilih Kelas</label>
+                            <select id="kelas" class="form-select" onchange="updateSiswa()">
+                                <option value="">-- Pilih Kelas --</option>
                                 <option value="X IPA 1">X IPA 1</option>
+                                <option value="X IPA 2">X IPA 2</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Nama Siswa</label>
-                            <select id="siswa" class="form-select" required>
-                                <option value="">-- Pilih Nama Siswa --</option>
-                                <option value="Ahmad Fauzi">Ahmad Fauzi</option>
-                                <option value="Budi Santoso">Budi Santoso</option>
-                                <option value="Citra Lestari">Citra Lestari</option>
-                                <option value="Dewi Sartika">Dewi Sartika</option>
-                                <option value="Eko Prasetyo">Eko Prasetyo</option>
+                            <label class="form-label">2. Pilih Nama Siswa</label>
+                            <select id="siswa" class="form-select" required disabled>
+                                <option value="">Pilih kelas dulu...</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Status Kehadiran</label>
+                            <label class="form-label">3. Status Kehadiran</label>
                             <select id="status" class="form-select">
                                 <option value="Hadir">Hadir</option>
                                 <option value="Izin">Izin</option>
@@ -56,7 +53,7 @@
                                 <option value="Alpa">Alpa</option>
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Simpan Ke Rekap</button>
+                        <button type="submit" class="btn btn-simpan w-100">Simpan Ke Rekap</button>
                     </form>
                 </div>
             </div>
@@ -67,7 +64,7 @@
                         <h5 class="mb-0">Data Rekap Harian</h5>
                         <div>
                             <button class="btn btn-sm btn-success" onclick="downloadExcel()">Cetak Excel</button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="clearData()">Hapus</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="clearData()">Hapus Semua</button>
                         </div>
                     </div>
                     <div class="table-responsive">
@@ -75,6 +72,7 @@
                             <thead>
                                 <tr>
                                     <th>Nama</th>
+                                    <th>Kelas</th>
                                     <th>Status</th>
                                     <th>Waktu</th>
                                 </tr>
@@ -88,63 +86,89 @@
     </div>
 
     <script>
-       // GANTI DENGAN URL WEB APP KAMU TADI
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypjc7sQvu-4wyFH6Prbjp0pO_HQAIEY5V8t0Ea1QgIcxa678wT9Q1e3sMoMGUK2-iD/exec";
+        // DATA MURID PER KELAS
+        const dataKelas = {
+            "X IPA 1": ["Ahmad Fauzi", "Budi Santoso", "Citra Lestari"],
+            "X IPA 2": ["Dewi Sartika", "Eko Prasetyo", "Farhan Yusuf"]
+        };
 
-const daftarSiswa = ["Ahmad Fauzi", "Budi Santoso", "Citra Lestari", "Dewi Sartika", "Eko Prasetyo"];
-const tabelBody = document.getElementById('tabelBody');
+        const kelasSelect = document.getElementById('kelas');
+        const siswaSelect = document.getElementById('siswa');
+        const tabelBody = document.getElementById('tabelBody');
 
-window.onload = function() { displayData(); };
+        // FUNGSI UPDATE DAFTAR NAMA BERDASARKAN KELAS
+        function updateSiswa() {
+            const kelasDipilih = kelasSelect.value;
+            
+            // Kosongkan dropdown siswa
+            siswaSelect.innerHTML = '<option value="">-- Pilih Nama --</option>';
+            
+            if (kelasDipilih && dataKelas[kelasDipilih]) {
+                siswaSelect.disabled = false; // Aktifkan dropdown
+                dataKelas[kelasDipilih].forEach(nama => {
+                    const option = document.createElement('option');
+                    option.value = nama;
+                    option.textContent = nama;
+                    siswaSelect.appendChild(option);
+                });
+            } else {
+                siswaSelect.disabled = true; // Matikan jika kelas belum dipilih
+                siswaSelect.innerHTML = '<option value="">Pilih kelas dulu...</option>';
+            }
+        }
 
-// Fungsi Kirim Data ke Google Sheets
-async function sendToGoogleSheet(data) {
-    await fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify(data)
-    });
-}
+        window.onload = function() { displayData(); };
 
-function hadirkanSemua() {
-    if(confirm("Hadirkan semua siswa? (Data akan terkirim ke Google Sheets)")) {
-        let storageData = JSON.parse(localStorage.getItem('rekapAbsen')) || [];
-        let waktuSekarang = new Date().toLocaleTimeString('id-ID');
+        document.getElementById('absenForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nama = siswaSelect.value;
+            const kelas = kelasSelect.value;
+            const status = document.getElementById('status').value;
+            const waktu = new Date().toLocaleTimeString('id-ID');
 
-        daftarSiswa.forEach(nama => {
-            let data = { siswa: nama, status: "Hadir", waktu: waktuSekarang };
-            storageData.push(data);
-            sendToGoogleSheet(data); // Kirim online
+            let storageData = JSON.parse(localStorage.getItem('rekapTugas')) || [];
+            storageData.push({ siswa: nama, kelas: kelas, status: status, waktu: waktu });
+
+            localStorage.setItem('rekapTugas', JSON.stringify(storageData));
+            displayData();
+            
+            siswaSelect.value = ""; // Reset nama saja setelah simpan
+            alert("Berhasil mencatat " + nama);
         });
 
-        localStorage.setItem('rekapAbsen', JSON.stringify(storageData));
-        displayData();
-    }
-}
+        function displayData() {
+            tabelBody.innerHTML = '';
+            let storageData = JSON.parse(localStorage.getItem('rekapTugas')) || [];
+            storageData.slice().reverse().forEach(item => {
+                let badgeClass = 'badge-' + item.status.toLowerCase();
+                tabelBody.innerHTML += `
+                    <tr>
+                        <td><strong>${item.siswa}</strong></td>
+                        <td>${item.kelas}</td>
+                        <td><span class="badge ${badgeClass}">${item.status}</span></td>
+                        <td><small>${item.waktu}</small></td>
+                    </tr>`;
+            });
+        }
 
-document.getElementById('absenForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const data = {
-        siswa: document.getElementById('siswa').value,
-        status: document.getElementById('status').value,
-        waktu: new Date().toLocaleTimeString('id-ID')
-    };
+        function clearData() {
+            if(confirm('Hapus semua rekap?')) {
+                localStorage.removeItem('rekapTugas');
+                displayData();
+            }
+        }
 
-    let storageData = JSON.parse(localStorage.getItem('rekapAbsen')) || [];
-    storageData.push(data);
-    localStorage.setItem('rekapAbsen', JSON.stringify(storageData));
-    
-    sendToGoogleSheet(data); // Kirim online
-    displayData();
-    alert("Data berhasil dikirim ke pusat!");
-});
-
-function displayData() {
-    tabelBody.innerHTML = '';
-    let storageData = JSON.parse(localStorage.getItem('rekapAbsen')) || [];
-    storageData.slice().reverse().forEach(item => {
-        let badgeClass = 'badge-' + item.status.toLowerCase();
-        tabelBody.innerHTML += `<tr><td>${item.siswa}</td><td><span class="badge ${badgeClass}">${item.status}</span></td><td>${item.waktu}</td></tr>`;
-    });
-}
+        function downloadExcel() {
+            let storageData = JSON.parse(localStorage.getItem('rekapTugas')) || [];
+            if (storageData.length == 0) return alert('Data kosong!');
+            let csvContent = "data:text/csv;charset=utf-8,Nama,Kelas,Status,Waktu\n" + 
+                storageData.map(e => `${e.siswa},${e.kelas},${e.status},${e.waktu}`).join("\n");
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "Rekap_Absen.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
     </script>
 </body>
 </html>
