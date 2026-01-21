@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Absen Sekolah</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
+        .navbar { background: #003366; color: white; padding: 1rem; }
+        .card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .btn-primary { background-color: #003366; border: none; }
+        .badge-hadir { background-color: #28a745; }
+        .badge-izin { background-color: #ffc107; color: black; }
+        .badge-sakit { background-color: #17a2b8; }
+        .badge-alpa { background-color: #dc3545; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar mb-4">
+        <div class="container text-center">
+            <h4 class="mb-0">🏫 Portal Smart Absen Guru</h4>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-5 mb-4">
+                <div class="card p-4">
+                    <h5 class="mb-3 font-weight-bold">Pilih Siswa & Status</h5>
+                    <form id="absenForm">
+                        <div class="mb-3">
+                            <label class="form-label">Kelas</label>
+                            <select id="kelas" class="form-select">
+                                <option value="X IPA 1">X IPA 1</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nama Siswa</label>
+                            <select id="siswa" class="form-select" required>
+                                <option value="">-- Pilih Nama Siswa --</option>
+                                <option value="Ahmad Fauzi">Ahmad Fauzi</option>
+                                <option value="Budi Santoso">Budi Santoso</option>
+                                <option value="Citra Lestari">Citra Lestari</option>
+                                <option value="Dewi Sartika">Dewi Sartika</option>
+                                <option value="Eko Prasetyo">Eko Prasetyo</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Status Kehadiran</label>
+                            <select id="status" class="form-select">
+                                <option value="Hadir">Hadir</option>
+                                <option value="Izin">Izin</option>
+                                <option value="Sakit">Sakit</option>
+                                <option value="Alpa">Alpa</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Simpan Ke Rekap</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-md-7">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Data Rekap Harian</h5>
+                        <div>
+                            <button class="btn btn-sm btn-success" onclick="downloadExcel()">Cetak Excel</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="clearData()">Hapus</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nama</th>
+                                    <th>Status</th>
+                                    <th>Waktu</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+       // GANTI DENGAN URL WEB APP KAMU TADI
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypjc7sQvu-4wyFH6Prbjp0pO_HQAIEY5V8t0Ea1QgIcxa678wT9Q1e3sMoMGUK2-iD/exec";
+
+const daftarSiswa = ["Ahmad Fauzi", "Budi Santoso", "Citra Lestari", "Dewi Sartika", "Eko Prasetyo"];
+const tabelBody = document.getElementById('tabelBody');
+
+window.onload = function() { displayData(); };
+
+// Fungsi Kirim Data ke Google Sheets
+async function sendToGoogleSheet(data) {
+    await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(data)
+    });
+}
+
+function hadirkanSemua() {
+    if(confirm("Hadirkan semua siswa? (Data akan terkirim ke Google Sheets)")) {
+        let storageData = JSON.parse(localStorage.getItem('rekapAbsen')) || [];
+        let waktuSekarang = new Date().toLocaleTimeString('id-ID');
+
+        daftarSiswa.forEach(nama => {
+            let data = { siswa: nama, status: "Hadir", waktu: waktuSekarang };
+            storageData.push(data);
+            sendToGoogleSheet(data); // Kirim online
+        });
+
+        localStorage.setItem('rekapAbsen', JSON.stringify(storageData));
+        displayData();
+    }
+}
+
+document.getElementById('absenForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const data = {
+        siswa: document.getElementById('siswa').value,
+        status: document.getElementById('status').value,
+        waktu: new Date().toLocaleTimeString('id-ID')
+    };
+
+    let storageData = JSON.parse(localStorage.getItem('rekapAbsen')) || [];
+    storageData.push(data);
+    localStorage.setItem('rekapAbsen', JSON.stringify(storageData));
+    
+    sendToGoogleSheet(data); // Kirim online
+    displayData();
+    alert("Data berhasil dikirim ke pusat!");
+});
+
+function displayData() {
+    tabelBody.innerHTML = '';
+    let storageData = JSON.parse(localStorage.getItem('rekapAbsen')) || [];
+    storageData.slice().reverse().forEach(item => {
+        let badgeClass = 'badge-' + item.status.toLowerCase();
+        tabelBody.innerHTML += `<tr><td>${item.siswa}</td><td><span class="badge ${badgeClass}">${item.status}</span></td><td>${item.waktu}</td></tr>`;
+    });
+}
+    </script>
+</body>
+</html>
