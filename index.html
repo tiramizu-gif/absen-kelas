@@ -1,174 +1,298 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Absen - Filter Kelas</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
-        .navbar { background: #003366; color: white; padding: 1rem; }
-        .card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .btn-simpan { background-color: #003366; color: white; }
-        .badge-hadir { background-color: #28a745; }
-        .badge-izin { background-color: #ffc107; color: black; }
-        .badge-sakit { background-color: #17a2b8; }
-        .badge-alpa { background-color: #dc3545; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart School Portal</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    :root {
+      --primary: #6366f1; --accent: #06b6d4; --success: #22c55e;
+      --bg: #f3f4f6; --card: #ffffff; --text: #1f2937;
+    }
+    [data-theme="dark"] {
+      --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --primary: #818cf8;
+    }
+
+    body { 
+      background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; 
+      margin: 0; padding: 0; transition: 0.4s; overflow-x: hidden;
+    }
+
+    /* Dekorasi Background */
+    .bg-deco {
+      position: fixed; width: 400px; height: 400px; border-radius: 50%;
+      background: var(--primary); filter: blur(120px); opacity: 0.1; z-index: -1;
+    }
+
+    .container { 
+      max-width: 500px; margin: 30px auto; padding: 25px; 
+      background: rgba(255,255,255,0.01); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 30px; min-height: 90vh;
+      display: flex; flex-direction: column;
+    }
+
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .card { 
+      background: var(--card); padding: 20px; border-radius: 20px; 
+      box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-bottom: 20px;
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+    .nav-tabs { display: flex; background: rgba(128,128,128,0.1); border-radius: 12px; padding: 5px; margin-bottom: 20px; }
+    .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; border-radius: 10px; font-weight: bold; transition: 0.3s; }
+    .tab.active { background: var(--primary); color: white; }
+
+    input, select { 
+      width: 100%; padding: 12px; margin-top: 10px; border-radius: 12px; 
+      border: 1px solid rgba(128,128,128,0.2); background: var(--card); color: var(--text);
+    }
+
+    .btn { 
+      width: 100%; padding: 15px; border: none; border-radius: 12px; 
+      font-weight: 700; cursor: pointer; margin-top: 15px; transition: 0.2s;
+    }
+    .btn-blue { background: var(--primary); color: white; }
+    .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+
+    .chart-container { width: 100%; height: 200px; margin: 20px 0; display: flex; justify-content: center; }
+
+    .footer { margin-top: auto; text-align: center; font-size: 11px; opacity: 0.5; padding: 20px 0; }
+  </style>
 </head>
 <body>
 
-    <nav class="navbar mb-4">
-        <div class="container text-center">
-            <h4 class="mb-0">🏫 Portal Absensi Berbasis Kelas</h4>
-        </div>
-    </nav>
+<div class="bg-deco" style="top:-100px; left:-100px;"></div>
+<div class="bg-deco" style="bottom:-100px; right:-100px;"></div>
 
-    <div class="container">
-        <div class="row">
-            <div class="col-md-5 mb-4">
-                <div class="card p-4">
-                    <h5 class="mb-3 text-center">Input Absensi</h5>
-                    <form id="absenForm">
-                        <div class="mb-3">
-                            <label class="form-label">1. Pilih Kelas</label>
-                            <select id="kelas" class="form-select" onchange="updateSiswa()">
-                                <option value="">-- Pilih Kelas --</option>
-                                <option value="X IPA 1">X IPA 1</option>
-                                <option value="X IPA 2">X IPA 2</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">2. Pilih Nama Siswa</label>
-                            <select id="siswa" class="form-select" required disabled>
-                                <option value="">Pilih kelas dulu...</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">3. Status Kehadiran</label>
-                            <select id="status" class="form-select">
-                                <option value="Hadir">Hadir</option>
-                                <option value="Izin">Izin</option>
-                                <option value="Sakit">Sakit</option>
-                                <option value="Alpa">Alpa</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-simpan w-100">Simpan Ke Rekap</button>
-                    </form>
-                </div>
-            </div>
+<div class="container">
+  <div class="header">
+    <h2 style="margin:0; font-size:1.4rem">Smart<span style="color:var(--primary)">Portal</span></h2>
+    <button onclick="toggleTheme()" style="background:none; border:none; cursor:pointer; font-size:20px;">🌓</button>
+  </div>
 
-            <div class="col-md-7">
-                <div class="card p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="mb-0">Data Rekap Harian</h5>
-                        <div>
-                            <button class="btn btn-sm btn-success" onclick="downloadExcel()">Cetak Excel</button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="clearData()">Hapus Semua</button>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Nama</th>
-                                    <th>Kelas</th>
-                                    <th>Status</th>
-                                    <th>Waktu</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabelBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="nav-tabs">
+    <div id="tG" class="tab active" onclick="showP('guru')">Guru</div>
+    <div id="tW" class="tab" onclick="showP('wali')">Wali Murid</div>
+  </div>
+
+  <div id="pGuru">
+    <div id="loginBox" class="card">
+      <h3 style="margin-top:0">Login Guru</h3>
+      <input type="password" id="pass" placeholder="Akses Kode">
+      <button class="btn btn-blue" onclick="doLogin()">Buka Absensi</button>
     </div>
+    <div id="absenBox" class="card" style="display:none;">
+      <h3>Pilih Kelas</h3>
+      <select id="selKls" onchange="renderSiswa()">
+        <option value="">-- Pilih --</option>
+        <option value="XII RPL">XII RPL</option>
+        <option value="XI RPL">XI RPL</option>
+         <option value="XII TKR">XII TKR</option>
+      </select>
+      <div id="lsSiswa" style="margin-top:20px"></div>
+      <button id="btnS" class="btn btn-blue" style="display:none; background:var(--success)" onclick="send()">SIMPAN ABSEN</button>
+    </div>
+  </div>
 
-    <script>
-        // DATA MURID PER KELAS
-        const dataKelas = {
-            "X IPA 1": ["Ahmad Fauzi", "Budi Santoso", "Citra Lestari"],
-            "X IPA 2": ["Dewi Sartika", "Eko Prasetyo", "Farhan Yusuf"]
-        };
+  <div id="pWali" style="display:none;">
+    <div class="card">
+      <h3 style="margin:0">Monitoring & Statistik</h3>
+      <select id="filW" onchange="updWali()"><option value="">Semua Kelas</option><option value="XII RPL">XII RPL</option><option value="XI RPL">XI RPL</option>
+      <option value="XII TKR">XII TKR</option></select>
+      
+      <div class="chart-container"><canvas id="myChart"></canvas></div>
 
-        const kelasSelect = document.getElementById('kelas');
-        const siswaSelect = document.getElementById('siswa');
-        const tabelBody = document.getElementById('tabelBody');
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-outline" style="padding:10px" onclick="refresh()">🔄 Update</button>
+        <button class="btn btn-blue" style="padding:10px" onclick="pdf()">📄 PDF</button>
+      </div>
+      <table style="width:100%; margin-top:20px; font-size:12px">
+        <thead><tr style="border-bottom:2px solid var(--primary)"><th>Nama</th><th>Kelas</th><th>Stat</th></tr></thead>
+        <tbody id="tbW"></tbody>
+      </table>
+    </div>
+  </div>
 
-        // FUNGSI UPDATE DAFTAR NAMA BERDASARKAN KELAS
-        function updateSiswa() {
-            const kelasDipilih = kelasSelect.value;
-            
-            // Kosongkan dropdown siswa
-            siswaSelect.innerHTML = '<option value="">-- Pilih Nama --</option>';
-            
-            if (kelasDipilih && dataKelas[kelasDipilih]) {
-                siswaSelect.disabled = false; // Aktifkan dropdown
-                dataKelas[kelasDipilih].forEach(nama => {
-                    const option = document.createElement('option');
-                    option.value = nama;
-                    option.textContent = nama;
-                    siswaSelect.appendChild(option);
-                });
-            } else {
-                siswaSelect.disabled = true; // Matikan jika kelas belum dipilih
-                siswaSelect.innerHTML = '<option value="">Pilih kelas dulu...</option>';
-            }
-        }
+  <div class="footer">
+    <p>© 2026 Digital School Presence System<br>Status: Online</p>
+  </div>
+</div>
 
-        window.onload = function() { displayData(); };
+<script>
+  const URL = "https://script.google.com/macros/s/AKfycbxNTTo-8F5mTudz70Y6QqlWVcv0kludaqK5vGbcu0FcwJdxA5VQ5lwzPmJ1byWBDOLz/exec"; 
+  const DB = { "XII RPL": ["Andi", "Budi", "Caca", "Dedi", "Euis"],
+   "XI RPL": ["Andi", "Budi", "Caca", "Dedi", "Euis"],
+   "XII TKR": ["Andi", "Budi", "KAKA", "Ded", "S"]
+   };
+  let raw = [], myChart = null;
 
-        document.getElementById('absenForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const nama = siswaSelect.value;
-            const kelas = kelasSelect.value;
-            const status = document.getElementById('status').value;
-            const waktu = new Date().toLocaleTimeString('id-ID');
+  function showP(p) {
+    document.getElementById('pGuru').style.display = p==='guru'?'block':'none';
+    document.getElementById('pWali').style.display = p==='wali'?'block':'none';
+    document.getElementById('tG').className = p==='guru'?'tab active':'tab';
+    document.getElementById('tW').className = p==='wali'?'tab active':'tab';
+    if(p==='wali') refresh();
+  }
 
-            let storageData = JSON.parse(localStorage.getItem('rekapTugas')) || [];
-            storageData.push({ siswa: nama, kelas: kelas, status: status, waktu: waktu });
+  function doLogin() { if(document.getElementById("pass").value==="12345") { document.getElementById("loginBox").style.display="none"; document.getElementById("absenBox").style.display="block"; } }
 
-            localStorage.setItem('rekapTugas', JSON.stringify(storageData));
-            displayData();
-            
-            siswaSelect.value = ""; // Reset nama saja setelah simpan
-            alert("Berhasil mencatat " + nama);
-        });
+  function renderSiswa() {
+    const k = document.getElementById("selKls").value;
+    const l = document.getElementById("lsSiswa"); l.innerHTML = "";
+    if(DB[k]) {
+      DB[k].forEach((n, i) => {
+        l.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(128,128,128,0.1)">
+          <span>${n}</span>
+          <div style="display:flex; gap:5px">
+            <input type="radio" name="s${i}" value="Hadir" id="h${i}" checked><label for="h${i}">H</label>
+            <input type="radio" name="s${i}" value="Sakit" id="s${i}"><label for="s${i}">S</label>
+            <input type="radio" name="s${i}" value="Izin" id="i${i}"><label for="i${i}">I</label>
+            <input type="radio" name="s${i}" value="Alpa" id="a${i}"><label for="a${i}">A</label>
+          </div>
+        </div>`;
+      });
+      document.getElementById("btnS").style.display = "block";
+    }
+  }
 
-        function displayData() {
-            tabelBody.innerHTML = '';
-            let storageData = JSON.parse(localStorage.getItem('rekapTugas')) || [];
-            storageData.slice().reverse().forEach(item => {
-                let badgeClass = 'badge-' + item.status.toLowerCase();
-                tabelBody.innerHTML += `
-                    <tr>
-                        <td><strong>${item.siswa}</strong></td>
-                        <td>${item.kelas}</td>
-                        <td><span class="badge ${badgeClass}">${item.status}</span></td>
-                        <td><small>${item.waktu}</small></td>
-                    </tr>`;
-            });
-        }
+  function send() {
+    const k = document.getElementById("selKls").value;
+    let p = [];
+    DB[k].forEach((n, i) => { p.push({ nama: n, kelas: k, status: document.querySelector(`input[name="s${i}"]:checked`).value }); });
+    fetch(URL, { method: 'POST', body: JSON.stringify({ absen: p }) }).then(() => { alert("Sukses!"); location.reload(); });
+  }
 
-        function clearData() {
-            if(confirm('Hapus semua rekap?')) {
-                localStorage.removeItem('rekapTugas');
-                displayData();
-            }
-        }
+  function refresh() {
+    document.getElementById("tbW").innerHTML = "<tr><td colspan='3' style='text-align:center'>Loading...</td></tr>";
+    fetch(URL).then(res => res.json()).then(data => { raw = data.rows; updWali(); });
+  }
 
-        function downloadExcel() {
-            let storageData = JSON.parse(localStorage.getItem('rekapTugas')) || [];
-            if (storageData.length == 0) return alert('Data kosong!');
-            let csvContent = "data:text/csv;charset=utf-8,Nama,Kelas,Status,Waktu\n" + 
-                storageData.map(e => `${e.siswa},${e.kelas},${e.status},${e.waktu}`).join("\n");
-            const link = document.createElement("a");
-            link.setAttribute("href", encodeURI(csvContent));
-            link.setAttribute("download", "Rekap_Absen.csv");
-            document.body.appendChild(link);
-            link.click();
-        }
-    </script>
+function updWali() {
+  const f = document.getElementById("filW").value.trim();
+  const tb = document.getElementById("tbW");
+  tb.innerHTML = "";
+  
+  // 1. Filter data berdasarkan kelas
+  let filtered = f === "" ? raw : raw.filter(r => r[3] && r[3].toString().trim() === f);
+
+  // 2. LOGIKA SORTING DUA TINGKAT
+  filtered.sort((a, b) => {
+    // Bandingkan Tanggal (Indeks 1) dulu
+    let bandingTanggal = b[1].localeCompare(a[1]); 
+    
+    // Jika tanggalnya sama (misal sama-sama 1 Maret), urutkan Nama (Indeks 2) A-Z
+    if (bandingTanggal === 0) {
+      return a[2].localeCompare(b[2]);
+    }
+    return bandingTanggal;
+  });
+
+  // 3. Tampilkan ke Tabel
+  filtered.forEach(r => {
+    tb.innerHTML += `<tr><td>${r[2]}</td><td>${r[3]}</td><td><b>${r[4]}</b></td></tr>`;
+  });
+
+  // Update grafik statistik
+  renderChart(filtered);
+}
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1");
+  var content = JSON.parse(e.postData.contents); 
+  var dataSiswa = content.absen; 
+  
+  var sekarang = new Date();
+  var opsi = { day: '2-digit', month: 'short', year: 'numeric' };
+  var tglRapi = sekarang.toLocaleDateString('id-ID', opsi); // Format: 01 Mar 2026
+  var jam = sekarang.getHours() + ":" + (sekarang.getMinutes()<10?'0':'') + sekarang.getMinutes();
+
+  var lastRow = sheet.getLastRow();
+  
+  dataSiswa.forEach(function(siswa) {
+    if (siswa.nama) {
+      lastRow++; 
+      sheet.getRange(lastRow, 2, 1, 8).setValues([[
+        tglRapi, siswa.nama, siswa.kelas, siswa.status, 
+        sekarang.getDate(), sekarang.getMonth() + 1, sekarang.getFullYear(), jam
+      ]]);
+    }
+  });
+
+  // LOGIKA PENTING: Urutkan Sheet berdasarkan Tanggal (Terbaru di atas) 
+  // lalu Nama (A-Z) agar di Spreadsheet tidak berantakan
+  sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).sort([
+    {column: 2, ascending: false}, // Kolom B (Tanggal) terbaru di atas
+    {column: 3, ascending: true}   // Kolom C (Nama) urut A-Z
+  ]);
+
+  return ContentService.createTextOutput(JSON.stringify({"result":"success"})).setMimeType(ContentService.MimeType.JSON);
+}
+    // Update Grafik
+    if(myChart) myChart.destroy();
+    const ctx = document.getElementById('myChart').getContext('2d');
+    myChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Hadir', 'Sakit', 'Izin', 'Alpa'],
+        datasets: [{ data: [stats.Hadir, stats.Sakit, stats.Izin, stats.Alpa], backgroundColor: ['#22c55e', '#eab308', '#3b82f6', '#ef4444'] }]
+      },
+      options: { plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text') } } } }
+    });
+  
+function pdf() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const filterKelas = document.getElementById("filW").value || "Semua Kelas";
+  
+  // 1. Judul Laporan
+  doc.setFontSize(18);
+  doc.text("LAPORAN PRESENSI SISWA", 14, 20);
+  
+  // 2. Info Detail
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Kelas : ${filterKelas}`, 14, 30);
+  doc.text(`Dicetak Pada : ${new Date().toLocaleString('id-ID')}`, 14, 35);
+
+  // 3. Ambil data yang sedang aktif di Web
+  const dataAktif = filterKelas === "" ? raw : raw.filter(r => r[3] === filterKelas);
+  
+  // 4. Hitung Rekap Singkat untuk di PDF
+  let h = 0, s = 0, i = 0, a = 0;
+  const tableData = dataAktif.map((r, index) => {
+    if(r[4] === "Hadir") h++;
+    if(r[4] === "Sakit") s++;
+    if(r[4] === "Izin") i++;
+    if(r[4] === "Alpa") a++;
+    return [index + 1, r[2], r[3], r[4], r[1]]; // No, Nama, Kelas, Status, Tanggal
+  });
+
+  // 5. Gambar Tabel
+  doc.autoTable({
+    head: [['No', 'Nama Siswa', 'Kelas', 'Status', 'Waktu']],
+    body: tableData,
+    startY: 45,
+    theme: 'striped',
+    headStyles: { fillColor: [99, 102, 241] }, // Warna ungu sesuai tema web
+  });
+
+  // 6. Tambahkan Rekap di bawah tabel
+  const finalY = doc.lastAutoTable.finalY + 10;
+  doc.text(`Ringkasan: Hadir (${h}), Sakit (${s}), Izin (${i}), Alpa (${a})`, 14, finalY);
+
+  // 7. Simpan File
+  doc.save(`Laporan_Absensi_${filterKelas.replace(" ","_")}.pdf`);
+}
+  function toggleTheme() {
+    const b = document.body;
+    b.setAttribute("data-theme", b.getAttribute("data-theme") === "dark" ? "light" : "dark");
+    if(myChart) updWali();
+  }
+</script>
 </body>
 </html>
