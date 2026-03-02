@@ -1,379 +1,217 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart School Portal</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-  <style>
-    :root {
-      --primary: #6366f1; --accent: #06b6d4; --success: #22c55e;
-      --bg: #f3f4f6; --card: #ffffff; --text: #1f2937;
-    }
-    [data-theme="dark"] {
-      --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --primary: #818cf8;
-    }
-
-    body { 
-      background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; 
-      margin: 0; padding: 0; transition: 0.4s; overflow-x: hidden;
-    }
-
-    /* Dekorasi Background */
-    .bg-deco {
-      position: fixed; width: 400px; height: 400px; border-radius: 50%;
-      background: var(--primary); filter: blur(120px); opacity: 0.1; z-index: -1;
-    }
-
-    .container { 
-      max-width: 500px; margin: 30px auto; padding: 25px; 
-      background: rgba(255,255,255,0.01); backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.1); border-radius: 30px; min-height: 90vh;
-      display: flex; flex-direction: column;
-    }
-
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-    .card { 
-      background: var(--card); padding: 20px; border-radius: 20px; 
-      box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-bottom: 20px;
-      animation: fadeInUp 0.5s ease-out;
-    }
-
-    @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-
-    .nav-tabs { display: flex; background: rgba(128,128,128,0.1); border-radius: 12px; padding: 5px; margin-bottom: 20px; }
-    .tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; border-radius: 10px; font-weight: bold; transition: 0.3s; }
-    .tab.active { background: var(--primary); color: white; }
-
-    input, select { 
-      width: 100%; padding: 12px; margin-top: 10px; border-radius: 12px; 
-      border: 1px solid rgba(128,128,128,0.2); background: var(--card); color: var(--text);
-    }
-
-    .btn { 
-      width: 100%; padding: 15px; border: none; border-radius: 12px; 
-      font-weight: 700; cursor: pointer; margin-top: 15px; transition: 0.2s;
-    }
-    .btn-blue { background: var(--primary); color: white; }
-    .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
-
-    .chart-container { width: 100%; height: 200px; margin: 20px 0; display: flex; justify-content: center; }
-
-    .footer { margin-top: auto; text-align: center; font-size: 11px; opacity: 0.5; padding: 20px 0; }
-  </style>
-</head>
-<body>
-
-<div class="bg-deco" style="top:-100px; left:-100px;"></div>
-<div class="bg-deco" style="bottom:-100px; right:-100px;"></div>
-
-<div class="container">
-  <div class="header">
-    <h2 style="margin:0; font-size:1.4rem">Smart<span style="color:var(--primary)">Portal</span></h2>
-    <button onclick="toggleTheme()" style="background:none; border:none; cursor:pointer; font-size:20px;">🌓</button>
-  </div>
-
-  <div class="nav-tabs">
-    <div id="tG" class="tab active" onclick="showP('guru')">Guru</div>
-    <div id="tW" class="tab" onclick="showP('wali')">Wali Murid</div>
-  </div>
-
-  <div id="pGuru">
-    <div id="loginBox" class="card">
-      <h3 style="margin-top:0">Login Guru</h3>
-      <input type="password" id="pass" placeholder="Akses Kode">
-      <button class="btn btn-blue" onclick="doLogin()">Buka Absensi</button>
-    </div>
-    <div id="absenBox" class="card" style="display:none;">
-      <h3>Pilih Kelas</h3>
-      <select id="selKls" onchange="renderSiswa()">
-        <option value="">-- Pilih --</option>
-        <option value="XII RPL">XII RPL</option>
-        <option value="XI RPL">XI RPL</option>
-         <option value="XII TKR">XII TKR</option>
-      </select>
-     <div id="loginBox" style="margin: 20px auto; max-width: 400px; padding: 20px; border-radius: 12px; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center;">
-  <h2 style="color: #4f46e5;">🔐 Login Guru</h2>
-  <p style="font-size: 14px; color: #64748b;">Masukkan password untuk mulai mengabsen</p>
-  <input type="password" id="passGuru" placeholder="Password Anda" style="width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;">
-  <button onclick="prosesLogin()" style="width: 100%; padding: 12px; background: #4f46e5; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">MASUK</button>
-</div>
-
-<div id="areaAbsen" style="display: none;">
-  <div id="lsSiswa" style="margin-top:20px"></div>
-  <button id="btnS" class="btn btn-blue" style="background:var(--success); width: 100%; margin-top: 15px;" onclick="send()">SIMPAN ABSEN</button>
-</div>
-
-  <div id="pWali" style="display:none;">
-    <div class="card">
-      <h3 style="margin:0">Monitoring & Statistik</h3>
-      <select id="filW" onchange="updWali()"><option value="">Semua Kelas</option><option value="XII RPL">XII RPL</option><option value="XI RPL">XI RPL</option>
-      <option value="XII TKR">XII TKR</option></select>
-      
-      <div class="chart-container"><canvas id="myChart"></canvas></div>
-
-      <div style="display:flex; gap:10px;">
-        <button class="btn btn-outline" style="padding:10px" onclick="refresh()">🔄 Update</button>
-        <button class="btn btn-blue" style="padding:10px" onclick="pdf()">📄 PDF</button>
-      </div>
-      <table style="width:100%; margin-top:20px; font-size:12px">
-        <thead><tr style="border-bottom:2px solid var(--primary)"><th>Nama</th><th>Kelas</th><th>Stat</th></tr></thead>
-        <tbody id="tbW"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="footer">
-    <p>© 2026 Digital School Presence System<br>Status: Online</p>
-  </div>
-</div>
-
-<script>
-  const URL = "https://script.google.com/macros/s/AKfycbz2N8rPg_swICJfr1r6Wyxy8tl1hIOjFiP4OmzG1-sBVGR7C7FXVoHHrBqOX6eEJx4f/exec"; 
-  const DB = { "XII RPL": ["Andi", "Budi", "Caca", "Dedi", "Euis"],
-   "XI RPL": ["Andi", "Budi", "Caca", "Dedi", "Euis"],
-   "XII TKR": ["Andi", "Budi", "KAKA", "Ded", "S"]
-   };
-  let raw = [], myChart = null;
-
-  function showP(p) {
-    document.getElementById('pGuru').style.display = p==='guru'?'block':'none';
-    document.getElementById('pWali').style.display = p==='wali'?'block':'none';
-    document.getElementById('tG').className = p==='guru'?'tab active':'tab';
-    document.getElementById('tW').className = p==='wali'?'tab active':'tab';
-    if(p==='wali') refresh();
-  }
-
-  function doLogin() { if(document.getElementById("pass").value==="12345") { document.getElementById("loginBox").style.display="none"; document.getElementById("absenBox").style.display="block"; } }
-
-  function renderSiswa() {
-    const k = document.getElementById("selKls").value;
-    const l = document.getElementById("lsSiswa"); l.innerHTML = "";
-    if(DB[k]) {
-      DB[k].forEach((n, i) => {
-        l.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(128,128,128,0.1)">
-          <span>${n}</span>
-          <div style="display:flex; gap:5px">
-            <input type="radio" name="s${i}" value="Hadir" id="h${i}" checked><label for="h${i}">H</label>
-            <input type="radio" name="s${i}" value="Sakit" id="s${i}"><label for="s${i}">S</label>
-            <input type="radio" name="s${i}" value="Izin" id="i${i}"><label for="i${i}">I</label>
-            <input type="radio" name="s${i}" value="Alpa" id="a${i}"><label for="a${i}">A</label>
-          </div>
-        </div>`;
-      });
-      document.getElementById("btnS").style.display = "block";
-    }
-  }
-
-function send() {
-  const pin = document.getElementById("kodeGuru").value;
-  
-  if (!pin) {
-    alert("PIN Guru harus diisi!");
-    return;
-  }
-
-  const payload = {
-    kodeGuru: pin,
-    absen: dataAbsen // Pastikan nama variabel ini sesuai dengan yang kamu gunakan untuk menampung data siswa
-  };
-
-  // Tampilkan loading atau ganti teks tombol
-  document.getElementById("btnS").innerText = "Mengirim...";
-
-  fetch(URL_SCRIPT, {
-    method: "POST",
-    body: JSON.stringify(payload)
-  })
-  .then(res => res.json())
-  .then(res => {
-    if (res.result === "success") {
-      alert("Berhasil! Absen dicatat oleh: " + res.namaGuru);
-      location.reload();
-    } else {
-      alert("Gagal: " + res.msg);
-      document.getElementById("btnS").innerText = "SIMPAN ABSEN";
-    }
-  })
-  .catch(err => {
-    alert("Terjadi kesalahan koneksi.");
-    document.getElementById("btnS").innerText = "SIMPAN ABSEN";
-  });
-}
-
-  function refresh() {
-    document.getElementById("tbW").innerHTML = "<tr><td colspan='3' style='text-align:center'>Loading...</td></tr>";
-    fetch(URL).then(res => res.json()).then(data => { raw = data.rows; updWali(); });
-  }
-
-function updWali() {
-  const f = document.getElementById("filW").value.trim();
-  const tb = document.getElementById("tbW");
-  tb.innerHTML = "";
-  
-  // 1. Filter data berdasarkan kelas
-  let filtered = f === "" ? raw : raw.filter(r => r[3] && r[3].toString().trim() === f);
-
-  // 2. LOGIKA SORTING DUA TINGKAT
-  filtered.sort((a, b) => {
-    // Bandingkan Tanggal (Indeks 1) dulu
-    let bandingTanggal = b[1].localeCompare(a[1]); 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presensi Smart v2</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    // Jika tanggalnya sama (misal sama-sama 1 Maret), urutkan Nama (Indeks 2) A-Z
-    if (bandingTanggal === 0) {
-      return a[2].localeCompare(b[2]);
-    }
-    return bandingTanggal;
-  });
+    <style>
+        :root {
+            --bg-body: #f1f5f9; --bg-card: #ffffff; --text-main: #1e293b;
+            --primary: #6366f1; --success: #22c55e; --border: #e2e8f0; --shadow: rgba(0,0,0,0.05);
+        }
+        [data-theme="dark"] {
+            --bg-body: #0f172a; --bg-card: #1e293b; --text-main: #f1f5f9;
+            --border: #334155; --shadow: rgba(0,0,0,0.3);
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; transition: all 0.3s ease; }
+        .navbar { display: flex; background: var(--bg-card); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px var(--shadow); padding: 5px 15px; justify-content: space-between; align-items: center; }
+        .tabs { display: flex; gap: 5px; }
+        .nav-item { padding: 10px 15px; cursor: pointer; font-weight: 600; border-radius: 8px; transition: 0.2s; color: #64748b; font-size: 14px; }
+        .nav-item.active { background: var(--primary); color: white; }
+        #theme-btn { background: none; border: none; font-size: 18px; color: var(--text-main); cursor: pointer; }
+        .container { max-width: 600px; margin: 15px auto; padding: 0 10px; }
+        .card { background: var(--bg-card); border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px var(--shadow); margin-bottom: 15px; border: 1px solid var(--border); }
+        
+        /* UKURAN GRAFIK DISINI */
+        .chart-container {
+            width: 180px; /* Diperkecil dari sebelumnya */
+            height: 180px;
+            margin: 0 auto 15px auto;
+        }
 
-  // 3. Tampilkan ke Tabel
-  filtered.forEach(r => {
-    tb.innerHTML += `<tr><td>${r[2]}</td><td>${r[3]}</td><td><b>${r[4]}</b></td></tr>`;
-  });
+        input, select, button { width: 100%; padding: 10px; margin: 8px 0; border-radius: 10px; border: 2px solid var(--border); background: var(--bg-body); color: var(--text-main); font-size: 14px; outline: none; }
+        button.btn-primary { background: var(--primary); color: white; border: none; font-weight: bold; }
+        .table-container { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { background: var(--bg-body); padding: 10px; text-align: left; }
+        td { padding: 10px; border-top: 1px solid var(--border); }
+        .hidden { display: none; }
+    </style>
+</head>
+<body data-theme="light">
 
-  // Update grafik statistik
-  renderChart(filtered);
-}
-function doPost(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1");
-  var content = JSON.parse(e.postData.contents); 
-  var dataSiswa = content.absen; 
-  
-  var sekarang = new Date();
-  var opsi = { day: '2-digit', month: 'short', year: 'numeric' };
-  var tglRapi = sekarang.toLocaleDateString('id-ID', opsi); // Format: 01 Mar 2026
-  var jam = sekarang.getHours() + ":" + (sekarang.getMinutes()<10?'0':'') + sekarang.getMinutes();
+    <div class="navbar">
+        <div class="tabs">
+            <div id="tabWaliBtn" class="nav-item active" onclick="switchTab('wali')"><i class="fas fa-users"></i> Wali</div>
+            <div id="tabGuruBtn" class="nav-item" onclick="switchTab('guru')"><i class="fas fa-key"></i> Guru</div>
+        </div>
+        <button id="theme-btn" onclick="toggleTheme()"><i class="fas fa-moon"></i></button>
+    </div>
 
-  var lastRow = sheet.getLastRow();
-  
-  dataSiswa.forEach(function(siswa) {
-    if (siswa.nama) {
-      lastRow++; 
-      sheet.getRange(lastRow, 2, 1, 8).setValues([[
-        tglRapi, siswa.nama, siswa.kelas, siswa.status, 
-        sekarang.getDate(), sekarang.getMonth() + 1, sekarang.getFullYear(), jam
-      ]]);
-    }
-  });
+    <div class="container">
+        <div id="tabWali">
+            <div class="card">
+                <h3 style="margin:0 0 15px 0; text-align:center;">Monitoring Siswa</h3>
+                <select id="filterKelasWali" onchange="filterDataWali()">
+                    <option value="Semua">Semua Kelas</option>
+                    <option value="XI RPL">XI RPL</option>
+                    <option value="XII TKR">XII TKR</option>
+                </select>
+                
+                <div class="chart-container">
+                    <canvas id="myChart"></canvas>
+                </div>
 
-  // LOGIKA PENTING: Urutkan Sheet berdasarkan Tanggal (Terbaru di atas) 
-  // lalu Nama (A-Z) agar di Spreadsheet tidak berantakan
-  sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).sort([
-    {column: 2, ascending: false}, // Kolom B (Tanggal) terbaru di atas
-    {column: 3, ascending: true}   // Kolom C (Nama) urut A-Z
-  ]);
+                <button class="btn-primary" onclick="buatPDF()" style="padding:8px; font-size:12px;"><i class="fas fa-file-pdf"></i> Download PDF</button>
+            </div>
 
-  return ContentService.createTextOutput(JSON.stringify({"result":"success"})).setMimeType(ContentService.MimeType.JSON);
-}
-    // Update Grafik
-    if(myChart) myChart.destroy();
-    const ctx = document.getElementById('myChart').getContext('2d');
-    myChart = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Hadir', 'Sakit', 'Izin', 'Alpa'],
-        datasets: [{ data: [stats.Hadir, stats.Sakit, stats.Izin, stats.Alpa], backgroundColor: ['#22c55e', '#eab308', '#3b82f6', '#ef4444'] }]
-      },
-      options: { plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text') } } } }
-    });
-  
-function pdf() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const filterKelas = document.getElementById("filW").value || "Semua Kelas";
-  
-  // 1. Judul Laporan
-  doc.setFontSize(18);
-  doc.text("LAPORAN PRESENSI SISWA", 14, 20);
-  
-  // 2. Info Detail
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Kelas : ${filterKelas}`, 14, 30);
-  doc.text(`Dicetak Pada : ${new Date().toLocaleString('id-ID')}`, 14, 35);
+            <div class="card">
+                <h4 style="margin:0 0 10px 0;">Riwayat Absen</h4>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>No</th><th>Nama</th><th>Stat</th><th>Tanggal</th></tr></thead>
+                        <tbody id="isiTabelWali"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-  // 3. Ambil data yang sedang aktif di Web
-  const dataAktif = filterKelas === "" ? raw : raw.filter(r => r[3] === filterKelas);
-  
-  // 4. Hitung Rekap Singkat untuk di PDF
-  let h = 0, s = 0, i = 0, a = 0;
-  const tableData = dataAktif.map((r, index) => {
-    if(r[4] === "Hadir") h++;
-    if(r[4] === "Sakit") s++;
-    if(r[4] === "Izin") i++;
-    if(r[4] === "Alpa") a++;
-    return [index + 1, r[2], r[3], r[4], r[1]]; // No, Nama, Kelas, Status, Tanggal
-  });
+        <div id="tabGuru" class="hidden">
+            <div id="loginGuru" class="card">
+                <h3 style="text-align:center;">Login Guru</h3>
+                <input type="password" id="passGuru" placeholder="Password Guru">
+                <button class="btn-primary" onclick="prosesLogin()">MASUK</button>
+            </div>
+            <div id="areaAbsen" class="card hidden">
+                <h3 id="infoGuru" style="color:var(--primary); text-align:center;"></h3>
+                <select id="pilihKelasGuru" onchange="tampilDaftarSiswa()">
+                    <option value="">-- Pilih Kelas --</option>
+                    <option value="XI RPL">XI RPL</option>
+                    <option value="XII TKR">XII TKR</option>
+                </select>
+                <div id="listSiswa"></div>
+                <button id="btnSimpan" class="btn-primary hidden" style="background:var(--success); margin-top:15px;" onclick="simpanAbsen()">SIMPAN ABSENSI</button>
+            </div>
+        </div>
+    </div>
 
-  // 5. Gambar Tabel
-  doc.autoTable({
-    head: [['No', 'Nama Siswa', 'Kelas', 'Status', 'Waktu']],
-    body: tableData,
-    startY: 45,
-    theme: 'striped',
-    headStyles: { fillColor: [99, 102, 241] }, // Warna ungu sesuai tema web
-  });
+    <script>
+        const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbxnACkQb2lwdQlROo52Z2Npe8YfEa5YmpbKNdz397Q4eCe_XCAc_DLvcVSnSlKIpOu7/exec";
+        let rawData = [];
+        let guruAktif = "";
+        let chartInstance = null;
 
-  // 6. Tambahkan Rekap di bawah tabel
-  const finalY = doc.lastAutoTable.finalY + 10;
-  doc.text(`Ringkasan: Hadir (${h}), Sakit (${s}), Izin (${i}), Alpa (${a})`, 14, finalY);
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.querySelector("#theme-btn i");
+            const isDark = body.getAttribute("data-theme") === "dark";
+            body.setAttribute("data-theme", isDark ? "light" : "dark");
+            icon.className = isDark ? "fas fa-moon" : "fas fa-sun";
+            if(rawData.length > 0) filterDataWali(); // Refresh chart color
+        }
 
-  // 7. Simpan File
-  doc.save(`Laporan_Absensi_${filterKelas.replace(" ","_")}.pdf`);
-}
-  function toggleTheme() {
-    const b = document.body;
-    b.setAttribute("data-theme", b.getAttribute("data-theme") === "dark" ? "light" : "dark");
-    if(myChart) updWali();
-  }
-  let guruAktif = ""; // Untuk menyimpan siapa yang sedang login
+        window.onload = () => { fetchInitialData(); };
 
-function prosesLogin() {
-  const pass = document.getElementById("passGuru").value;
-  if (!pass) return alert("Password wajib diisi!");
+        function switchTab(type) {
+            document.getElementById('tabWali').classList.toggle('hidden', type !== 'wali');
+            document.getElementById('tabGuru').classList.toggle('hidden', type !== 'guru');
+            document.getElementById('tabWaliBtn').classList.toggle('active', type === 'wali');
+            document.getElementById('tabGuruBtn').classList.toggle('active', type === 'guru');
+        }
 
-  // Verifikasi password ke Google Sheets
-  fetch(URL_SCRIPT, {
-    method: "POST",
-    body: JSON.stringify({ aksi: "login", password: pass })
-  })
-  .then(res => res.json())
-  .then(res => {
-    if (res.result === "success") {
-      guruAktif = res.namaGuru;
-      alert("Selamat bertugas, " + guruAktif);
-      document.getElementById("loginBox").style.display = "none";
-      document.getElementById("areaAbsen").style.display = "block";
-      // Jalankan fungsi menampilkan siswa milikmu di sini
-    } else {
-      alert("Password Salah! Silakan cek kembali.");
-    }
-  });
-}
+        function fetchInitialData() {
+            fetch(URL_SCRIPT).then(r => r.json()).then(res => {
+                rawData = res.rows;
+                filterDataWali();
+            });
+        }
 
-function send() {
-  const payload = {
-    aksi: "simpan",
-    namaGuru: guruAktif, // Nama guru otomatis terisi dari hasil login
-    absen: dataAbsen
-  };
+        function filterDataWali() {
+            const kls = document.getElementById("filterKelasWali").value;
+            const tbody = document.getElementById("isiTabelWali");
+            tbody.innerHTML = "";
+            let dataFiltered = kls === "Semua" ? rawData : rawData.filter(r => r[3] === kls);
+            dataFiltered.slice(0, 10).forEach((r, i) => {
+                tbody.innerHTML += `<tr><td>${i+1}</td><td>${r[2]}</td><td><b>${r[4]}</b></td><td>${r[1]}</td></tr>`;
+            });
+            updateChart(dataFiltered);
+        }
 
-  fetch(URL_SCRIPT, {
-    method: "POST",
-    body: JSON.stringify(payload)
-  })
-  .then(res => res.json())
-  .then(res => {
-    if (res.result === "success") {
-      alert("Absen Berhasil Disimpan!");
-      location.reload();
-    }
-  });
-}
-</script>
+        function prosesLogin() {
+            const pass = document.getElementById("passGuru").value;
+            fetch(URL_SCRIPT, { method: "POST", body: JSON.stringify({ aksi: "login", password: pass }) })
+            .then(r => r.json()).then(res => {
+                if(res.result === "success") {
+                    guruAktif = res.namaGuru;
+                    document.getElementById("loginGuru").classList.add('hidden');
+                    document.getElementById("areaAbsen").classList.remove('hidden');
+                    document.getElementById("infoGuru").innerText = "Halo, " + guruAktif;
+                } else { alert("Password Salah!"); }
+            });
+        }
+
+        const listNama = { "XI RPL": ["Andi", "Budi", "Caca", "Dedi", "Euis"], "XII TKR": ["Fahmi", "Gita", "Hana", "Ivan", "Joko"] };
+
+        function tampilDaftarSiswa() {
+            const kls = document.getElementById("pilihKelasGuru").value;
+            const wadah = document.getElementById("listSiswa");
+            wadah.innerHTML = "";
+            if(!kls) return document.getElementById("btnSimpan").classList.add('hidden');
+            listNama[kls].forEach(n => {
+                wadah.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);">
+                    <span>${n}</span>
+                    <select class="sel-stat" data-nama="${n}" style="width:100px; margin:0;"><option value="Hadir">Hadir</option><option value="Izin">Izin</option><option value="Sakit">Sakit</option><option value="Alfa">Alfa</option></select>
+                </div>`;
+            });
+            document.getElementById("btnSimpan").classList.remove('hidden');
+        }
+
+        function simpanAbsen() {
+            const kls = document.getElementById("pilihKelasGuru").value;
+            const inputs = document.querySelectorAll(".sel-stat");
+            let data = [];
+            inputs.forEach(i => data.push({ nama: i.dataset.nama, kelas: kls, status: i.value }));
+            fetch(URL_SCRIPT, { method: "POST", body: JSON.stringify({ aksi: "simpan", namaGuru: guruAktif, absen: data }) })
+            .then(r => r.json()).then(res => { if(res.result === "success") { alert("Berhasil!"); location.reload(); } });
+        }
+
+        function updateChart(dataKls) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            let s = { Hadir: 0, Izin: 0, Sakit: 0, Alfa: 0 };
+            dataKls.forEach(r => { if(s[r[4]] !== undefined) s[r[4]]++; });
+            const isDark = document.body.getAttribute("data-theme") === "dark";
+            
+            if(chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, { 
+                type: 'doughnut', 
+                data: { 
+                    labels: Object.keys(s), 
+                    datasets: [{ data: Object.values(s), backgroundColor: ['#22c55e', '#f59e0b', '#3b82f6', '#ef4444'], borderWidth: 0 }] 
+                },
+                options: { 
+                    cutout: '70%',
+                    plugins: { 
+                        legend: { display: false }, // Legenda disembunyikan agar grafik lebih besar di ruang kecil
+                    } 
+                }
+            });
+        }
+
+        function buatPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const kls = document.getElementById("filterKelasWali").value;
+            let dataPDF = kls === "Semua" ? rawData : rawData.filter(r => r[3] === kls);
+            const rows = dataPDF.map((r, i) => [i + 1, r[2], r[3], r[4], r[1]]);
+            doc.text("LAPORAN ABSENSI: " + kls, 14, 15);
+            doc.autoTable({ head: [['No', 'Nama', 'Kelas', 'Status', 'Tanggal']], body: rows, startY: 25 });
+            doc.save("Laporan.pdf");
+        }
+    </script>
 </body>
 </html>
-
