@@ -95,17 +95,17 @@
         <option value="XI RPL">XI RPL</option>
          <option value="XII TKR">XII TKR</option>
       </select>
-      <div id="lsSiswa" style="margin-top:20px"></div>
-     <div id="lsSiswa" style="margin-top:20px"></div>
-
-<div style="margin: 15px 0; padding: 10px; background: #f1f5f9; border-radius: 8px;">
-  <label style="display:block; margin-bottom:5px; font-size:12px;"><b>🔐 PIN GURU:</b></label>
-  <input type="password" id="kodeGuru" placeholder="Masukkan PIN" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+     <div id="loginBox" style="margin: 20px auto; max-width: 400px; padding: 20px; border-radius: 12px; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center;">
+  <h2 style="color: #4f46e5;">🔐 Login Guru</h2>
+  <p style="font-size: 14px; color: #64748b;">Masukkan password untuk mulai mengabsen</p>
+  <input type="password" id="passGuru" placeholder="Password Anda" style="width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;">
+  <button onclick="prosesLogin()" style="width: 100%; padding: 12px; background: #4f46e5; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">MASUK</button>
 </div>
 
-<button id="btnS" class="btn btn-blue" style="display:none; background:var(--success)" onclick="send()">SIMPAN ABSEN</button>
-    </div>
-  </div>
+<div id="areaAbsen" style="display: none;">
+  <div id="lsSiswa" style="margin-top:20px"></div>
+  <button id="btnS" class="btn btn-blue" style="background:var(--success); width: 100%; margin-top: 15px;" onclick="send()">SIMPAN ABSEN</button>
+</div>
 
   <div id="pWali" style="display:none;">
     <div class="card">
@@ -132,7 +132,7 @@
 </div>
 
 <script>
-  const URL = "https://script.google.com/macros/s/AKfycbxNTTo-8F5mTudz70Y6QqlWVcv0kludaqK5vGbcu0FcwJdxA5VQ5lwzPmJ1byWBDOLz/exec"; 
+  const URL = "https://script.google.com/macros/s/AKfycbz2N8rPg_swICJfr1r6Wyxy8tl1hIOjFiP4OmzG1-sBVGR7C7FXVoHHrBqOX6eEJx4f/exec"; 
   const DB = { "XII RPL": ["Andi", "Budi", "Caca", "Dedi", "Euis"],
    "XI RPL": ["Andi", "Budi", "Caca", "Dedi", "Euis"],
    "XII TKR": ["Andi", "Budi", "KAKA", "Ded", "S"]
@@ -329,6 +329,51 @@ function pdf() {
     b.setAttribute("data-theme", b.getAttribute("data-theme") === "dark" ? "light" : "dark");
     if(myChart) updWali();
   }
+  let guruAktif = ""; // Untuk menyimpan siapa yang sedang login
+
+function prosesLogin() {
+  const pass = document.getElementById("passGuru").value;
+  if (!pass) return alert("Password wajib diisi!");
+
+  // Verifikasi password ke Google Sheets
+  fetch(URL_SCRIPT, {
+    method: "POST",
+    body: JSON.stringify({ aksi: "login", password: pass })
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (res.result === "success") {
+      guruAktif = res.namaGuru;
+      alert("Selamat bertugas, " + guruAktif);
+      document.getElementById("loginBox").style.display = "none";
+      document.getElementById("areaAbsen").style.display = "block";
+      // Jalankan fungsi menampilkan siswa milikmu di sini
+    } else {
+      alert("Password Salah! Silakan cek kembali.");
+    }
+  });
+}
+
+function send() {
+  const payload = {
+    aksi: "simpan",
+    namaGuru: guruAktif, // Nama guru otomatis terisi dari hasil login
+    absen: dataAbsen
+  };
+
+  fetch(URL_SCRIPT, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (res.result === "success") {
+      alert("Absen Berhasil Disimpan!");
+      location.reload();
+    }
+  });
+}
 </script>
 </body>
 </html>
+
